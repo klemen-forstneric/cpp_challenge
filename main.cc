@@ -1,4 +1,5 @@
 #include <array>
+#include <future>
 #include <iostream>
 #include <vector>
 
@@ -11,12 +12,14 @@
 
 namespace {
 
+constexpr size_t kNumRequestHandlerThreads = 10;
+
 enum class RequestType : int32_t {
   kIpRequest = 700,
   kPingRequest,
   kImageRequest,
-
 };
+
 struct Request {
   RequestType type;
   std::vector<uint8_t> data;
@@ -27,7 +30,7 @@ enum class ResponseType : int32_t {
   kBadRequest = 400,
 };
 
-Request ConstructRequestFromPackedData(zmq::socket_t& socket) {
+Request ConstructRequestFromRaw(zmq::socket_t& socket) {
   zmq::message_t message;
   socket.recv(&message, ZMQ_SNDMORE);
 
@@ -63,16 +66,13 @@ void SendMultipartMessage(zmq::socket_t& socket,
   socket.send(&data[0], data.size());
 }
 
-}  // namespace
-
-int main(int argc, char** argv) {
-  zmq::context_t context(1);
+void RequestHandler(zmq::context_t& context) {
   zmq::socket_t socket(context, ZMQ_REP);
-  socket.bind("tcp://*:5555");
+  socket.connect("inproc://request_handlers");
 
   Request request;
   while (true) {
-    request = ConstructRequestFromPackedData(socket);
+    request = ConstructRequestFromRaw(socket);
     switch (request.type) {
       case RequestType::kIpRequest: {
         std::vector<std::string> ip_addresses =
@@ -108,6 +108,25 @@ int main(int argc, char** argv) {
         break;
     }
   }
+}
 
-  return 0;
+}  // namespace
+
+int main(int argc, char** argv) {
+  zmq::context_t context(1);
+
+  zmq::socket_t clients(context, ZMQ_ROUTER);
+  clients.bind("tcp://*:5555");
+
+  zmq::socket_t handlers(context, ZMQ_DEALER);
+  handlers.bind("inproc://request_handlers");
+
+  std::vector<std::future<void>> futures;
+  for (size_t i = 0; i < kNumRequestHandlerThreads; ++i) {
+    futures.push_back(
+        std::async(std::launch::async, &RequestHandler, std::ref(context)));
+  }
+
+  zmq::proxy(static_cast<void*>(clients), static_cast<void*>(handlers),
+             nullptr);
 }
