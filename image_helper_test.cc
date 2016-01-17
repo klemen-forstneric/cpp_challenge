@@ -482,7 +482,7 @@ TEST(ImageHelperTest, ReadingInvalidJpegImageWorks) {
   EXPECT_TRUE(image.IsEmpty());
 }
 
-TEST(ImageHelperTest, Test) {
+TEST(ImageHelperTest, GetAveragePixelValueWorks) {
   image_helper::Image image{11, 1, {1, 5, 6, 2, 6, 8, 3, 7, 2, 7, 2}};
   size_t average = image_helper::GetAveragePixelValue(image);
 

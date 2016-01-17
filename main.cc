@@ -60,6 +60,9 @@ template <typename Container>
 void SendMultipartMessage(zmq::socket_t& socket,
                           ResponseType type,
                           const Container& data) {
+  static_assert(std::is_class<Container>::value,
+                "Container must be of class type.");
+
   std::vector<uint8_t> serialized =
       serialization::FromUint32(static_cast<uint32_t>(type));
   socket.send(&serialized[0], serialized.size(), ZMQ_SNDMORE);
