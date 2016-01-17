@@ -1,6 +1,8 @@
 #ifndef SERIALIZATION_H_
 #define SERIALIZATION_H_
 
+#include <stdint.h>
+
 #include <vector>
 
 namespace serialization {

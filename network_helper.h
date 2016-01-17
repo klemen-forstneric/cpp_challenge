@@ -1,6 +1,7 @@
 #ifndef NETWORK_HELPER_H_
 #define NETWORK_HELPER_H_
 
+#include <string>
 #include <vector>
 
 namespace network_helper {

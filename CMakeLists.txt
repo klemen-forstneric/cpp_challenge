@@ -25,4 +25,4 @@ set_target_properties(
 set(LIBRARIES "-lzmq -lopencv_core -lopencv_imgcodecs")
 
 target_link_libraries(server ${LIBRARIES})
-target_link_libraries(server_tests ${LIBRARIES} "-lgtest")
+target_link_libraries(server_tests ${LIBRARIES} "-lgtest -lgtest_main -pthread")

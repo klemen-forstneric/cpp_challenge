@@ -1,6 +1,9 @@
 #ifndef IMAGE_HELPER_H_
 #define IMAGE_HELPER_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <vector>
 
 namespace image_helper {
