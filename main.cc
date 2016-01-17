@@ -1,6 +1,6 @@
 #include <array>
-#include <future>
 #include <iostream>
+#include <thread>
 #include <vector>
 
 #include "zmq.hpp"
@@ -81,6 +81,7 @@ void RequestHandler(zmq::context_t& context) {
                              utility::JoinString(ip_addresses, ';'));
         break;
       }
+
       case RequestType::kPingRequest:
         SendMultipartMessage(socket, ResponseType::kSuccess,
                              std::string("pong"));
@@ -94,14 +95,12 @@ void RequestHandler(zmq::context_t& context) {
                                std::string("Bad data"));
         } else {
           uint32_t average = image_helper::GetAveragePixelValue(image);
-          std::vector<uint8_t> average_serialized =
-              serialization::FromUint32(average);
-
           SendMultipartMessage(socket, ResponseType::kSuccess,
-                               average_serialized);
+                               serialization::FromUint32(average));
         }
         break;
       }
+
       default:
         SendMultipartMessage(socket, ResponseType::kBadRequest,
                              std::string("Unknown command"));
@@ -121,11 +120,9 @@ int main(int argc, char** argv) {
   zmq::socket_t handlers(context, ZMQ_DEALER);
   handlers.bind("inproc://request_handlers");
 
-  std::vector<std::future<void>> futures;
-  for (size_t i = 0; i < kNumRequestHandlerThreads; ++i) {
-    futures.push_back(
-        std::async(std::launch::async, &RequestHandler, std::ref(context)));
-  }
+  std::vector<std::thread> threads;
+  for (size_t i = 0; i < kNumRequestHandlerThreads; ++i)
+    threads.emplace_back(&RequestHandler, std::ref(context));
 
   zmq::proxy(static_cast<void*>(clients), static_cast<void*>(handlers),
              nullptr);
