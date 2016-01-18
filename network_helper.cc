@@ -24,7 +24,7 @@ std::vector<std::string> GetActiveAdaptersIPs() {
 
     if (getnameinfo(ifa->ifa_addr, sizeof(sockaddr_in), ip_address, NI_MAXHOST,
                     NULL, 0, NI_NUMERICHOST) != 0) {
-      return {};
+      continue;
     }
 
     if (ifa->ifa_addr->sa_family == AF_INET)
